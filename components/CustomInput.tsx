@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useContext } from "react";
 import {
   StyleSheet,
   TextInput,
@@ -6,42 +6,51 @@ import {
   View,
   ViewStyle,
 } from "react-native";
-import { colors } from "../theme/colors";
+import { ThemeContext } from "../app/_layout";
 
 interface CustomInputProps extends TextInputProps {
-  containerStyle?: ViewStyle; // Added to handle layout overrides
+  containerStyle?: ViewStyle;
 }
 
-export default function CustomInput({
-  style,
-  containerStyle,
-  ...restProps
-}: CustomInputProps) {
-  return (
-    <View style={[styles.container, containerStyle]}>
-      <TextInput
-        style={[styles.input, style]}
-        placeholderTextColor={colors.textMuted}
-        {...restProps}
-      />
-    </View>
-  );
-}
+const CustomInput = React.forwardRef<TextInput, CustomInputProps>(
+  ({ style, containerStyle, ...restProps }, ref) => {
+    const { colors } = useContext(ThemeContext);
+
+    return (
+      <View style={[styles.container, containerStyle]}>
+        <TextInput
+          ref={ref}
+          style={[
+            styles.input,
+            {
+              backgroundColor: colors.inputBg,
+              borderColor: colors.inputBorder,
+              color: colors.primaryText,
+            },
+            style,
+          ]}
+          placeholderTextColor={colors.secondaryText}
+          autoCapitalize="none"
+          autoCorrect={false}
+          {...restProps}
+        />
+      </View>
+    );
+  },
+);
+
+CustomInput.displayName = "CustomInput";
 
 const styles = StyleSheet.create({
-  container: {
-    marginBottom: 16,
-    width: "100%",
-  },
+  container: { width: "100%", marginBottom: 16 },
   input: {
     width: "100%",
     height: 54,
-    backgroundColor: colors.inputBg,
     borderWidth: 1,
-    borderColor: colors.inputBorder,
     borderRadius: 8,
     paddingHorizontal: 16,
     fontSize: 16,
-    color: colors.primary,
   },
 });
+
+export default CustomInput;

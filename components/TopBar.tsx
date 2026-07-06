@@ -1,173 +1,187 @@
 import { Ionicons } from "@expo/vector-icons";
-import React, { useState } from "react";
-import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import React, { useContext, useEffect } from "react";
+import {
+  Platform,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from "react-native";
 import Animated, {
   interpolateColor,
   useAnimatedStyle,
   useSharedValue,
-  withTiming,
+  withSpring,
 } from "react-native-reanimated";
-import { colors } from "../theme/colors";
-
-// Fixed dimensions for precise layout calculations
-const TOGGLE_WIDTH = 110;
-const TOGGLE_HEIGHT = 40;
-const CIRCLE_SIZE = 32;
-const MARGIN = 4;
-const SLIDE_DISTANCE = TOGGLE_WIDTH - CIRCLE_SIZE - MARGIN * 2; // Distance the circle moves left-to-right
+import { ThemeContext } from "../app/_layout";
 
 export default function TopBar() {
-  const [isDarkMode, setIsDarkMode] = useState(false);
-  const animationProgress = useSharedValue(0);
+  const { isDarkMode, colors, toggleTheme } = useContext(ThemeContext);
 
-  const toggleDarkMode = () => {
-    const nextValue = isDarkMode ? 0 : 1;
-    animationProgress.value = withTiming(nextValue, { duration: 300 });
-    setIsDarkMode(!isDarkMode);
-  };
+  // Shared value tracking switch position: 0 for Light, 1 for Dark
+  const switchProgress = useSharedValue(isDarkMode ? 1 : 0);
 
-  // 1. Container Background Animation (Light gray/white to Dark blue/slate)
-  const animatedContainerStyle = useAnimatedStyle(() => {
+  // Keep animation value perfectly in sync with state context alterations
+  useEffect(() => {
+    switchProgress.value = withSpring(isDarkMode ? 1 : 0, {
+      damping: 15,
+      stiffness: 120,
+    });
+  }, [isDarkMode]);
+
+  // Animated style moving the internal sliding knob left or right
+  const animatedKnobStyle = useAnimatedStyle(() => {
+    const translation = switchProgress.value * 22; // Distance range of the slider track track
+    return {
+      transform: [{ translateX: translation }],
+    };
+  });
+
+  // Animated track color shift matching Retaily profiles
+  const animatedTrackStyle = useAnimatedStyle(() => {
     const backgroundColor = interpolateColor(
-      animationProgress.value,
+      switchProgress.value,
       [0, 1],
-      ["#FFFFFF", "#4A5B78"],
+      ["rgba(11, 34, 64, 0.15)", "rgba(56, 189, 248, 0.3)"], // Soft light track vs glowing dark mode track
     );
     return { backgroundColor };
   });
 
-  // 2. Sliding Circle Style (Handles both X position and internal background change)
-  const animatedCircleStyle = useAnimatedStyle(() => {
-    const translateX = animationProgress.value * SLIDE_DISTANCE;
-    const backgroundColor = interpolateColor(
-      animationProgress.value,
-      [0, 1],
-      ["#0B2240", "#FFFFFF"],
-    );
-    return {
-      transform: [{ translateX }],
-      backgroundColor,
-    };
-  });
-
-  // 3. Text Fading & Opacity (Smoothly crossfades Light Mode/Dark Mode text layers)
-  const lightTextStyle = useAnimatedStyle(() => ({
-    opacity: withTiming(isDarkMode ? 0 : 1, { duration: 200 }),
-  }));
-
-  const darkTextStyle = useAnimatedStyle(() => ({
-    opacity: withTiming(isDarkMode ? 1 : 0, { duration: 200 }),
-  }));
-
   return (
-    <View style={styles.headerContainer}>
-      {/* Left Side: Language Picker */}
-      <TouchableOpacity style={styles.languageDropdown} activeOpacity={0.7}>
-        <Ionicons name="globe-outline" size={20} color={colors.primary} />
-        <Text style={styles.languageText}>English</Text>
-        <Ionicons
-          name="chevron-down"
-          size={14}
-          color={colors.primary}
-          style={styles.chevron}
+    <View style={styles.container}>
+      {/* LEFT SIDE: Premium Glassmorphic System Status Pill */}
+      <View
+        style={[
+          styles.systemPill,
+          {
+            backgroundColor: isDarkMode
+              ? "rgba(30, 41, 59, 0.45)"
+              : "rgba(255, 255, 255, 0.45)",
+            borderColor: isDarkMode
+              ? "rgba(255, 255, 255, 0.08)"
+              : "rgba(11, 34, 64, 0.08)",
+          },
+        ]}
+      >
+        <View
+          style={[
+            styles.statusDot,
+            { backgroundColor: isDarkMode ? "#38BDF8" : "#1A44B8" },
+          ]}
         />
-      </TouchableOpacity>
+        <Text style={[styles.systemPillText, { color: colors.primaryText }]}>
+          RETAILY{" "}
+          <Text style={{ fontWeight: "400", opacity: 0.7 }}>OS v1.0</Text>
+        </Text>
+      </View>
 
-      {/* Right Side: Re-engineered Slide Switch */}
-      <TouchableOpacity activeOpacity={0.9} onPress={toggleDarkMode}>
-        <Animated.View style={[styles.togglePill, animatedContainerStyle]}>
-          {/* Static Text Layers layer behind/beside the sliding path */}
-          <Animated.View
-            style={[styles.textWrapper, styles.lightTextPos, lightTextStyle]}
-          >
-            <Text style={styles.lightLabel}>Dark Mode</Text>
-          </Animated.View>
+      {/* RIGHT SIDE: Smooth Slide Switch Toggle Container */}
+      <View style={styles.rightControlBlock}>
+        {/* Ambient Mode Icon indicators flanking the switch */}
+        <Ionicons
+          name="sunny"
+          size={16}
+          color={isDarkMode ? "rgba(245, 158, 11, 0.4)" : "#F59E0B"}
+          style={styles.flankingIcon}
+        />
 
-          <Animated.View
-            style={[styles.textWrapper, styles.darkTextPos, darkTextStyle]}
-          >
-            <Text style={styles.darkLabel}>Light Mode</Text>
-          </Animated.View>
-
-          {/* Smooth Sliding Circle Container */}
-          <Animated.View style={[styles.iconCircle, animatedCircleStyle]}>
-            <Ionicons
-              name={isDarkMode ? "moon-outline" : "sunny-outline"}
-              size={18}
-              color={isDarkMode ? "#0B2240" : "#FFFFFF"}
+        <TouchableOpacity
+          onPress={toggleTheme}
+          activeOpacity={0.9}
+          style={styles.switchTouchTarget}
+        >
+          {/* Animated Track backdrop */}
+          <Animated.View style={[styles.switchTrack, animatedTrackStyle]}>
+            {/* Animated Sliding Knob Capsule */}
+            <Animated.View
+              style={[
+                styles.switchKnob,
+                { backgroundColor: isDarkMode ? "#38BDF8" : "#0B2240" },
+                animatedKnobStyle,
+              ]}
             />
           </Animated.View>
-        </Animated.View>
-      </TouchableOpacity>
+        </TouchableOpacity>
+
+        <Ionicons
+          name="moon"
+          size={14}
+          color={isDarkMode ? "#38BDF8" : "rgba(11, 34, 64, 0.4)"}
+          style={styles.flankingIcon}
+        />
+      </View>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  headerContainer: {
+  container: {
+    width: "100%",
+    height: 64,
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    paddingHorizontal: 20,
-    paddingTop: 16,
-    width: "100%",
+    paddingHorizontal: 24,
+    marginTop: Platform.OS === "android" ? 4 : 0,
   },
-  languageDropdown: {
+  systemPill: {
     flexDirection: "row",
     alignItems: "center",
+    paddingHorizontal: 12,
     paddingVertical: 6,
+    borderRadius: 20,
+    borderWidth: 1,
+    ...Platform.select({
+      ios: {
+        shadowColor: "#000",
+        shadowOffset: { width: 0, height: 1 },
+        shadowOpacity: 0.02,
+        shadowRadius: 2,
+      },
+      android: {
+        elevation: 1,
+      },
+    }),
   },
-  languageText: {
-    fontSize: 14,
-    fontWeight: "600",
-    color: colors.primary,
-    marginLeft: 6,
+  statusDot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+    marginRight: 8,
   },
-  chevron: {
-    marginLeft: 4,
-    marginTop: 2,
+  systemPillText: {
+    fontSize: 11,
+    fontWeight: "800",
+    letterSpacing: 1.2,
   },
-  togglePill: {
-    width: TOGGLE_WIDTH,
-    height: TOGGLE_HEIGHT,
-    borderRadius: TOGGLE_HEIGHT / 2,
-    position: "relative",
-    justifyContent: "center",
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 4,
-    elevation: 2,
-  },
-  iconCircle: {
-    width: CIRCLE_SIZE,
-    height: CIRCLE_SIZE,
-    borderRadius: CIRCLE_SIZE / 2,
-    justifyContent: "center",
+
+  // Custom Slider Layout Structure
+  rightControlBlock: {
+    flexDirection: "row",
     alignItems: "center",
-    position: "absolute",
-    left: MARGIN,
+    gap: 6,
   },
-  textWrapper: {
-    position: "absolute",
+  flankingIcon: {
+    alignSelf: "center",
+  },
+  switchTouchTarget: {
+    paddingVertical: 4,
+  },
+  switchTrack: {
+    width: 48,
+    height: 26,
+    borderRadius: 13,
+    padding: 3,
     justifyContent: "center",
   },
-  // When circle is left (Light mode), text aligns right
-  lightTextPos: {
-    right: 14,
-  },
-  // When circle is right (Dark mode), text aligns left
-  darkTextPos: {
-    left: 14,
-  },
-  lightLabel: {
-    fontSize: 11,
-    fontWeight: "700",
-    color: "#0B2240",
-  },
-  darkLabel: {
-    fontSize: 11,
-    fontWeight: "700",
-    color: "#FFFFFF",
+  switchKnob: {
+    width: 20,
+    height: 20,
+    borderRadius: 10,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.15,
+    shadowRadius: 1.5,
+    elevation: 2,
   },
 });
