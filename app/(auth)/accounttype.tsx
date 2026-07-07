@@ -3,11 +3,10 @@ import { LinearGradient } from "expo-linear-gradient";
 import { useRouter } from "expo-router";
 import React, { useContext } from "react";
 import {
-  Platform,
   StyleSheet,
   Text,
   TouchableOpacity,
-  View,
+  View
 } from "react-native";
 import Animated, { FadeInDown, FadeInUp } from "react-native-reanimated";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -72,6 +71,7 @@ export default function AccountTypeScreen() {
                   {
                     backgroundColor: colors.inputBg,
                     borderColor: colors.inputBorder,
+                    borderWidth: isDarkMode ? 0:2
                   },
                 ]}
               >
@@ -234,20 +234,20 @@ const styles = StyleSheet.create({
     alignItems: "center",
     padding: 20,
     borderRadius: 12,
-    borderWidth: 1,
-    ...Platform.select({
-      ios: {
-        shadowColor: "#000",
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.02,
-        shadowRadius: 3,
-      },
-      android: {
-        elevation: 1,
-      },
-    }),
+    // ...Platform.select({
+    //   ios: {
+    //     shadowColor: "#000",
+    //     shadowOffset: { width: 0, height: 2 },
+    //     shadowOpacity: 0.02,
+    //     shadowRadius: 3,
+    //   },
+    //   android: {
+    //     elevation: 1,
+    //   },
+    // }),
   },
   iconWrapper: {
+    backgroundColor: "red",
     width: 54,
     height: 54,
     borderRadius: 27,
