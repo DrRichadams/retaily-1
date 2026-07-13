@@ -1,4 +1,3 @@
-// colors.ts
 export const themeColors = {
   light: {
     background: "#F1F5F9", // Refreshing light ice-blue tint
