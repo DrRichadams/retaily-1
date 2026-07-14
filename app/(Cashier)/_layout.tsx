@@ -1,9 +1,8 @@
 import { Ionicons } from "@expo/vector-icons";
 import { Tabs } from "expo-router";
-import { Dimensions, View } from "react-native";
+import { View } from "react-native";
 
 export default function CashierLayout() {
-  const { width } = Dimensions.get("window");
   return (
     <Tabs
       initialRouteName="index"
