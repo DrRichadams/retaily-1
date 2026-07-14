@@ -11,10 +11,9 @@ export default function Index() {
         flex: 1,
         justifyContent: "center",
         // alignItems: "center",
-        backgroundColor: "red",
       }}
     >
-      <View style={[styles.container, { backgroundColor: "blue" }]}>
+      <View style={[styles.container]}>
         <Text style={{ color: "red", flex: 1 }}>THIS IS A CONTAINER VIEW</Text>
       </View>
     </SafeAreaView>
